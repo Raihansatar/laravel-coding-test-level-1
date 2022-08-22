@@ -2,13 +2,16 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\Event\EventStoreRequest;
 use App\Models\Event;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Str;
 
 class EventController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
         try {
             $events = Event::all();
@@ -17,9 +20,9 @@ class EventController extends Controller
                 "data" => $events
             ];
             return response()->json($result, 200);
+
         } catch (\Throwable $th) {
             $result = [
-                "success" => 400,
                 "message" => "Failed to retrive events",
                 "data" => []
             ];
@@ -29,7 +32,7 @@ class EventController extends Controller
 
     public function activeEvent()
     {
-        $now = now();
+        $now = now('Asia/Kuala_Lumpur');
 
         try {
             $events = Event::where('start_at', '<=', $now)
@@ -43,7 +46,6 @@ class EventController extends Controller
             return response()->json($result, 200);
         } catch (\Throwable $th) {
             $result = [
-                "success" => 400,
                 "message" => "Failed to retrive events",
                 "data" => []
             ];
@@ -58,9 +60,28 @@ class EventController extends Controller
 
     public function store(Request $request)
     {
+        $validator = Validator::make($request->all(), [
+            'name' => 'required',
+            'start_at' => 'required',
+            'end_at' => 'required',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                "message" => "Invalid input",
+                "error" => $validator->getMessageBag()
+            ], 400);
+        }
+
         DB::beginTransaction();
         try {
-            $event = Event::create($request->all());
+            $event = Event::create([
+                'name' => $request->name,
+                'slug' => Str::slug($request->name),
+                'start_at' => $request->start_at,
+                'end_at' => $request->end_at
+            ]);
+
             $result = [
                 "message" => "Event successfully created",
                 "data" => $event
@@ -70,9 +91,7 @@ class EventController extends Controller
         } catch (\Throwable $th) {
             DB::rollBack();
             $result = [
-                "success" => 500,
-                "message" => $th->getMessage(),
-                // "message" => "Failed to create event",
+                "message" => "Failed to create event",
                 "data" => []
             ];
             return response()->json($result, 400);
@@ -104,11 +123,29 @@ class EventController extends Controller
 
     public function update(Request $request, $id)
     {
+        $validator = Validator::make($request->all(), [
+            'name' => 'required',
+            'start_at' => 'required',
+            'end_at' => 'required',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                "message" => "Invalid input",
+                "error" => $validator->getMessageBag()
+            ], 400);
+        }
+
         DB::beginTransaction();
         try {
             $event = Event::updateOrCreate([
                 'id' => $id
-            ], $request->all());
+            ], [
+                'name' => $request->name,
+                'slug' => Str::slug($request->name),
+                'start_at' => $request->start_at,
+                'end_at' => $request->end_at
+            ]);
 
             $result = [
                 "message" => "Event successfully updated",
@@ -119,7 +156,7 @@ class EventController extends Controller
         } catch (\Throwable $th) {
             DB::rollBack();
             $result = [
-                "message" => "Failed to update events",
+                "message" => $th,
                 "data" => null
             ];
             return response()->json($result, 400);

@@ -17,8 +17,8 @@ return new class extends Migration
             $table->uuid('id')->primary();
             $table->string('name');
             $table->string('slug')->unique();
-            $table->dateTime('start_at')->nullable();
-            $table->dateTime('end_at')->nullable();
+            $table->dateTime('start_at');
+            $table->dateTime('end_at');
             $table->timestamp('created_at');
             $table->timestamp('updated_at');
             $table->softDeletes();
