@@ -13,20 +13,31 @@ class EventController extends Controller
 {
     public function index(Request $request)
     {
-        try {
-            $events = Event::all();
-            $result = [
-                "message" => "Events successfully retrived",
-                "data" => $events
-            ];
-            return response()->json($result, 200);
+        if($request->wantsJson()){
+            try {
+                $events = Event::all();
+                $result = [
+                    "message" => "Events successfully retrived",
+                    "data" => $events
+                ];
+                return response()->json($result, 200);
 
-        } catch (\Throwable $th) {
-            $result = [
-                "message" => "Failed to retrive events",
-                "data" => []
-            ];
-            return response()->json($result, 400);
+            } catch (\Throwable $th) {
+                $result = [
+                    "message" => "Failed to retrive events",
+                    "data" => []
+                ];
+                return response()->json($result, 400);
+            }
+        }else{
+            try {
+                $events = Event::paginate(15);
+
+                return view('event.index', compact('events'));
+            } catch (\Throwable $th) {
+                abort(404);
+            }
+
         }
     }
 
@@ -163,22 +174,36 @@ class EventController extends Controller
         }
     }
 
-    public function destroy($id)
+    public function destroy(Request $request, $id)
     {
         DB::beginTransaction();
         try {
-            Event::findOrFail($id)->delete();
+            $event = Event::findOrFail($id);
+            $event_name = $event->name;
+            $event->delete();
             $result = [
-                "message" => "Event successfully destroyed",
+                "message" => "Event $event_name successfully destroyed",
             ];
             DB::commit();
-            return response()->json($result, 200);
+
+            if($request->wantsJson()){
+                return response()->json($result, 200);
+            }else{
+                return back()->with('success', "Event $event_name successfully destroyed");
+            }
+
         } catch (\Throwable $th) {
             DB::rollBack();
             $result = [
                 "message" => "Failed to destroy events",
             ];
-            return response()->json($result, 400);
+
+            if($request->wantsJson()){
+                return response()->json($result, 400);
+            }else{
+                return back()->with('success', "Failed to destroy events");
+            }
+
         }
     }
 }
