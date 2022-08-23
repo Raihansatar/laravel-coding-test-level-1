@@ -95,10 +95,14 @@ class EventController extends Controller
         ]);
 
         if ($validator->fails()) {
-            return response()->json([
-                "message" => "Invalid input",
-                "error" => $validator->getMessageBag()
-            ], 400);
+            if($request->wantsJson()){
+                return response()->json([
+                    "message" => "Invalid input",
+                    "error" => $validator->getMessageBag()
+                ], 400);
+            }else{
+                return back()->with('error', $validator->getMessageBag());
+            }
         }
 
         DB::beginTransaction();
@@ -205,10 +209,14 @@ class EventController extends Controller
         ]);
 
         if ($validator->fails()) {
-            return response()->json([
-                "message" => "Invalid input",
-                "error" => $validator->getMessageBag()
-            ], 400);
+            if($request->wantsJson()){
+                return response()->json([
+                    "message" => "Invalid input",
+                    "error" => $validator->getMessageBag()
+                ], 400);
+            }else{
+                return back()->with('error', $validator->getMessageBag());
+            }
         }
 
         DB::beginTransaction();
