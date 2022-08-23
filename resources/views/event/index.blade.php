@@ -1,10 +1,12 @@
 @extends('layouts.main')
 
-@section('toolbar')
-    <div class="mt-4 d-flex justify-content-end">
-        <a href="{{ route('event.create') }}" class="btn btn-success">Add event</a>
-    </div>
-@endsection
+@auth()
+    @section('toolbar')
+        <div class="mt-4 d-flex justify-content-end">
+            <a href="{{ route('event.create') }}" class="btn btn-success">Add event</a>
+        </div>
+    @endsection
+@endauth
 
 @section('content')
     <div class="container">
@@ -71,12 +73,15 @@
                                 <td>{{ $event->created_at->format('d/m/Y g:ia') }}</td>
                                 <td>{{ $event->updated_at->format('d/m/Y g:ia') }}</td>
                                 <td class="">
-                                    <a href="{{ route('event.edit', ['id' => $event->id]) }}" class="btn btn-sm btn-primary m-1">Edit</a>
-                                    <form action="{{ route('event.destroy', ['id' => $event->id]) }}" method="POST">
-                                        @csrf
-                                        @method("DELETE")
-                                        <button type="submit" class="btn btn-sm btn-danger m-1">Delete</button>
-                                    </form>
+                                    <a href="{{ route('event.show', ['id' => $event->id]) }}" class="btn btn-sm btn-info m-1">Show</a>
+                                    @auth()
+                                        <a href="{{ route('event.edit', ['id' => $event->id]) }}" class="btn btn-sm btn-primary m-1">Edit</a>
+                                        <form action="{{ route('event.destroy', ['id' => $event->id]) }}" method="POST">
+                                            @csrf
+                                            @method("DELETE")
+                                            <button type="submit" class="btn btn-sm btn-danger m-1">Delete</button>
+                                        </form>
+                                    @endauth
                                 </td>
                             </tr>
 

@@ -39,16 +39,22 @@ class RegisterController extends Controller
 
         DB::beginTransaction();
         try {
-            User::create([
+            $user = User::create([
                 'name' => $data['name'],
                 'email' => $data['email'],
                 'password' => Hash::make($data['password']),
             ]);
 
+            $token = $user->createToken('authToken')->plainTextToken;
+
             DB::commit();
 
             return $request->wantsJson()
-                ? response()->json(["message" => "User successfully register. You can login now"], 200)
+                ? response()->json([
+                    "message" => "User successfully register. You can login now",
+                    'access_token' => $token,
+                    'token_type' => 'Bearer'
+                ], 200)
                 : redirect()
                     ->route('login')
                     ->with('success', "User successfully register. You can login now");

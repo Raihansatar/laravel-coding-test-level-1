@@ -21,13 +21,18 @@ Route::get('/', function () {
     return view('welcome');
 });
 
+// authentication
 Route::get('/login', [LoginController::class, 'login'])->name('login');
 Route::post('/login', [LoginController::class, 'authenticate'])->name('login.post');
+Route::post('/logout', [LoginController::class, 'logout'])->name('logout');
 Route::get('/register', [RegisterController::class, 'register'])->name('register');
 Route::post('/register', [RegisterController::class, 'store'])->name('register.store');
 
+
+Route::get('events/active-events', [EventController::class, 'activeEvent'])->name('event.active-event');
+Route::resource('events', EventController::class)->only(['show', 'index'])->parameter('events','id')->names('event');
+
 Route::middleware('auth:sanctum')->group(function (){
-    Route::get('events/active-events', [EventController::class, 'activeEvent'])->name('event.active-event');
-    Route::resource('events', EventController::class)->parameter('events','id')->names('event');
+    Route::resource('events', EventController::class)->except(['show', 'index'])->parameter('events','id')->names('event');
 });
 

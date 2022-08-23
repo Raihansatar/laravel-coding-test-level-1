@@ -26,7 +26,7 @@
                                         <input id="remember-me" name="remember-me" type="checkbox"></span>
                                     </label>
                                     <br>
-                                    <input type="submit" name="submit" class="btn btn-info btn-md" value="submit">
+                                    <input type="submit" name="submit" class="btn btn-info btn-md" value="Login">
                                 </div>
                                 <div class="col-6">
                                     <div class="text-right my-auto">

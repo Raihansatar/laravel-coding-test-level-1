@@ -29,16 +29,11 @@
                             </div>
                             <div class="row">
                                 <div class="form-group col-6">
-                                    <label for="remember-me">
-                                        <span>Remember me</span><span>
-                                        <input id="remember-me" name="remember-me" type="checkbox"></span>
-                                    </label>
-                                    <br>
-                                    <input type="submit" name="submit" class="btn btn-info btn-md" value="submit">
+                                    <input type="submit" name="submit" class="btn btn-info btn-md" value="Register">
                                 </div>
                                 <div class="col-6">
                                     <div class="text-right my-auto">
-                                        <a href="{{ route('register') }}">Register here</a>
+                                        <a href="{{ route('login') }}">Login</a>
                                     </div>
                                 </div>
                             </div>

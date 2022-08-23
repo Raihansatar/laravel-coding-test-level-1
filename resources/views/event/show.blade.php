@@ -1,5 +1,15 @@
 @extends('layouts.main')
 
+@section('toolbar')
+    <div class="mt-4 d-flex justify-content-end">
+        <a href="{{ route('event.index') }}" class="btn btn-secondary mr-2">Back</a>
+        @auth()
+            <a href="{{ route('event.edit', ['id' => $event->id]) }}" class="btn btn-warning">Edit</a>
+        @endauth
+    </div>
+@endsection
+
+
 @section('content')
     <div class="container">
         @include('layouts.flash-message')
@@ -29,9 +39,6 @@
                         <input type="datetime-local" name="end_at" value="{{ $event->end_at->format('Y-m-d H:i:s') }}" class="form-control-plaintext" readonly>
                     </div>
                 </div>
-            </div>
-            <div class="card-footer d-flex justify-content-end">
-                <a href="{{ route('event.edit', ['id' => $event->id]) }}" class="btn btn-warning">Edit</a>
             </div>
         </div>
 
