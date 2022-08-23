@@ -17,7 +17,13 @@
                             <label for="" class="font-weight-bold">Name<span class="text-danger">*</span></label>
                             <input type="text" name="name" class="form-control" value="{{ $event->name }}" required>
                         </div>
+                        <div class="form-group col-6">
+                            <label for="" class="font-weight-bold">Slug</label>
+                            <input type="text" name="slug" class="form-control" value="{{ $event->slug }}">
+                            <span class="text-muted small">If empty, new slug will be auto generated</span>
+                        </div>
                     </div>
+
                     <div class="row">
                         <div class="form-group col-6">
                             <label for="" class="font-weight-bold">Start At<span class="text-danger">*</span></label>

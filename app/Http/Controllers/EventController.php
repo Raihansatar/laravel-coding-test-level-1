@@ -2,12 +2,16 @@
 
 namespace App\Http\Controllers;
 
+use App\Mail\EventCreatedMail;
 use App\Models\Event;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Redis;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
+use Illuminate\Validation\Rule;
 
 class EventController extends Controller
 {
@@ -89,25 +93,44 @@ class EventController extends Controller
     {
         $validator = Validator::make($request->all(), [
             'name' => 'required',
-            'start_at' => 'required',
-            'end_at' => 'required',
+            'slug' => 'unique:events,slug',
+            'start_at' => 'required|date',
+            'end_at' => 'required|date|after_or_equal:start_at',
         ]);
 
         if ($validator->fails()) {
-            return response()->json([
-                "message" => "Invalid input",
-                "error" => $validator->getMessageBag()
-            ], 400);
+            if($request->wantsJson()){
+                return response()->json([
+                    "message" => "Invalid input",
+                    "error" => $validator->getMessageBag()
+                ], 400);
+            }else{
+                return back()->withErrors($validator);
+            }
         }
 
         DB::beginTransaction();
         try {
+
+            if($request->slug){
+                $slug = $request->slug;
+            }else{
+                $count = Event::where('name', $request->name)->count();
+                $slug = ($count == 0)
+                    ? Str::slug($request->name)
+                    : Str::slug($request->name.'-'.$count);
+            }
+
             $event = Event::create([
                 'name' => $request->name,
-                'slug' => Str::slug($request->name),
+                'slug' => $slug,
                 'start_at' => $request->start_at,
                 'end_at' => $request->end_at
             ]);
+
+            Mail::to($request->user())->send(new EventCreatedMail($event, auth()->user()->name));
+
+            Redis::set("event-$event->id", $event);
 
             $result = [
                 "message" => "Event successfully created",
@@ -115,57 +138,82 @@ class EventController extends Controller
             ];
             DB::commit();
 
-            if($request->wantsJson()){
-                return response()->json($result, 200);
-            }else{
-                return  redirect()
+            return $request->wantsJson()
+                ? response()->json($result, 200)
+                : redirect()
                     ->route('event.show', ['id' => $event->id])
                     ->with('success', "Event $event->name successfully created");
-            }
 
         } catch (\Throwable $th) {
+            throw $th;
             DB::rollBack();
             $result = [
                 "message" => "Failed to create event",
                 "data" => []
             ];
-            if($request->wantsJson()){
-                return response()->json($result, 400);
-            }else{
-                return back()->with('error', "Failed to create event");
-            }
+
+            return $request->wantsJson()
+                ? response()->json($result, 400)
+                : back()->with('error', "Failed to create event");
         }
     }
 
     public function show(Request $request, $id)
     {
         try {
-            $event = Event::findOrFail($id);
+            $cachedEvent = Redis::get("event-$id");
+
+            if(isset($cachedEvent)){
+                $event = json_decode($cachedEvent);
+
+                // map date to carbon format
+                $event->start_at = Carbon::parse($event->start_at);
+                $event->end_at = Carbon::parse($event->end_at);
+
+            }else{
+                $event = Event::findOrFail($id);
+
+                Redis::set("event-$event->id", $event);
+            }
+
             $result = [
                 "message" => "Event successfully retrived",
                 "data" => $event
             ];
-            if($request->wantsJson()){
-                return response()->json($result, 200);
-            }else{
-                return view('event.show', compact('event'));
-            }
+
+            return $request->wantsJson()
+                ? response()->json($result, 200)
+                : view('event.show', compact('event'));
+
         } catch (\Throwable $th) {
             $result = [
                 "message" => "Failed to retrive events",
                 "data" => null
             ];
-            if($request->wantsJson()){
-                return response()->json($result, 400);
-            }else{
-                abort(404);
-            }
+
+            return $request->wantsJson()
+                ? response()->json($result, 400)
+                : back()
+                    ->with('error', "Failed to retrive events");
+
         }
     }
 
     public function edit($id)
     {
-        $event = Event::findOrFail($id);
+        $cachedEvent = Redis::get("event-$id");
+
+        if(isset($cachedEvent)){
+            $event = json_decode($cachedEvent);
+
+            // map date to carbon format
+            $event->start_at = Carbon::parse($event->start_at);
+            $event->end_at = Carbon::parse($event->end_at);
+        }else{
+            $event = Event::findOrFail($id);
+            Redis::set("event-$event->id", $event);
+        }
+
         return view('event.edit', compact('event'));
     }
 
@@ -173,27 +221,44 @@ class EventController extends Controller
     {
         $validator = Validator::make($request->all(), [
             'name' => 'required',
-            'start_at' => 'required',
-            'end_at' => 'required',
+            'slug' => Rule::unique('events', 'slug')->ignore($id),
+            'start_at' => 'required|date',
+            'end_at' => 'required|date|after_or_equal:start_at',
         ]);
 
         if ($validator->fails()) {
-            return response()->json([
-                "message" => "Invalid input",
-                "error" => $validator->getMessageBag()
-            ], 400);
+            if($request->wantsJson()){
+                return response()->json([
+                    "message" => "Invalid input",
+                    "error" => $validator->getMessageBag()
+                ], 400);
+            }else{
+                return back()->withErrors($validator);
+            }
         }
 
         DB::beginTransaction();
         try {
+            if($request->slug){
+                $slug = $request->slug;
+            }else{
+                $count = Event::where('name', $request->name)->count();
+                $slug = ($count == 0)
+                    ? Str::slug($request->name)
+                    : Str::slug($request->name.'-'.$count);
+            }
+
             $event = Event::updateOrCreate([
                 'id' => $id
             ], [
                 'name' => $request->name,
-                'slug' => Str::slug($request->name),
+                'slug' => $slug,
                 'start_at' => $request->start_at,
                 'end_at' => $request->end_at
             ]);
+
+            Redis::del("event-$event->id");
+            Redis::set("event-$event->id", $event);
 
             $result = [
                 "message" => "Event $event->name successfully updated",
@@ -201,26 +266,23 @@ class EventController extends Controller
             ];
             DB::commit();
 
-            if($request->wantsJson()){
-                return response()->json($result, 200);
-            }else{
-                return  redirect()
+            return $request->wantsJson()
+                ? response()->json($result, 200)
+                : redirect()
                     ->route('event.show', ['id' => $event->id])
                     ->with('success', "Event $event->name successfully updated");
-            }
-
 
         } catch (\Throwable $th) {
             DB::rollBack();
             $result = [
-                "message" => "Failed $event->name to update event",
+                "message" => "Failed to update event",
                 "data" => null
             ];
-            if($request->wantsJson()){
-                return response()->json($result, 400);
-            }else{
-                return back()->with('error', "Failed $event->name to update event");
-            }
+
+            return $request->wantsJson()
+                ? response()->json($result, 400)
+                : back()->with('error', "Failed $event->name to update event");
+
         }
     }
 
@@ -234,13 +296,13 @@ class EventController extends Controller
             $result = [
                 "message" => "Event $event_name successfully destroyed",
             ];
+
+            Redis::del("event-$id");
             DB::commit();
 
-            if($request->wantsJson()){
-                return response()->json($result, 200);
-            }else{
-                return back()->with('success', "Event $event_name successfully destroyed");
-            }
+            return $request->wantsJson()
+                ? response()->json($result, 200)
+                : back()->with('success', "Event $event_name successfully destroyed");
 
         } catch (\Throwable $th) {
             DB::rollBack();
@@ -248,11 +310,9 @@ class EventController extends Controller
                 "message" => "Failed to destroy events",
             ];
 
-            if($request->wantsJson()){
-                return response()->json($result, 400);
-            }else{
-                return back()->with('error', "Failed to destroy events");
-            }
+            return $request->wantsJson()
+                ? response()->json($result, 400)
+                : back()->with('error', "Failed to destroy events");
 
         }
     }
