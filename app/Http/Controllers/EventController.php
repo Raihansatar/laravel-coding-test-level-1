@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\Event\EventStoreRequest;
 use App\Models\Event;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
@@ -31,10 +32,27 @@ class EventController extends Controller
             }
         }else{
             try {
-                $events = Event::paginate(15);
+                $per_page = 10;
+                if($request->per_page){
+                    $per_page = $request->per_page;
+                }
+
+                $events = Event::
+                    when($request->name, function ($query) use($request) {
+                        $query->where('name', 'LIKE', '%'.$request->name.'%');
+                    })
+                    // filter date by get the active based on the date
+                    ->when($request->date, function ($query) use($request) {
+                        $date = Carbon::parse($request->date);
+                        $query
+                            ->where('start_at', '<=', $date)
+                            ->where('end_at', '>=', $date);
+                    })
+                    ->paginate($per_page)->withQueryString();
 
                 return view('event.index', compact('events'));
             } catch (\Throwable $th) {
+                throw $th;
                 abort(404);
             }
 
@@ -66,7 +84,7 @@ class EventController extends Controller
 
     public function create()
     {
-        //
+        return view('event.create');
     }
 
     public function store(Request $request)
@@ -98,14 +116,26 @@ class EventController extends Controller
                 "data" => $event
             ];
             DB::commit();
-            return response()->json($result, 200);
+
+            if($request->wantsJson()){
+                return response()->json($result, 200);
+            }else{
+                return  redirect()
+                    ->route('event.show', ['id' => $event->id])
+                    ->with('success', "Event $event->name successfully created");
+            }
+
         } catch (\Throwable $th) {
             DB::rollBack();
             $result = [
                 "message" => "Failed to create event",
                 "data" => []
             ];
-            return response()->json($result, 400);
+            if($request->wantsJson()){
+                return response()->json($result, 400);
+            }else{
+                return back()->with('error', "Failed to create event");
+            }
         }
     }
 
@@ -191,7 +221,7 @@ class EventController extends Controller
             if($request->wantsJson()){
                 return response()->json($result, 400);
             }else{
-                return back()->with('success', "Failed $event->name to update event");
+                return back()->with('error', "Failed $event->name to update event");
             }
         }
     }
@@ -223,7 +253,7 @@ class EventController extends Controller
             if($request->wantsJson()){
                 return response()->json($result, 400);
             }else{
-                return back()->with('success', "Failed to destroy events");
+                return back()->with('error', "Failed to destroy events");
             }
 
         }
