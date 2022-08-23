@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Requests\Event\EventStoreRequest;
 use App\Models\Event;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -52,7 +51,6 @@ class EventController extends Controller
 
                 return view('event.index', compact('events'));
             } catch (\Throwable $th) {
-                throw $th;
                 abort(404);
             }
 
