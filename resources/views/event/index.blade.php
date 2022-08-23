@@ -62,7 +62,9 @@
                             @foreach ($events as $event)
                             <tr>
                                 <td>{{ $index++ }} </td>
-                                <td>{{ $event->name }}</td>
+                                <td>
+                                    <a href="{{ route('event.show', ['id' => $event->id]) }}">{{ $event->name }}</a>
+                                </td>
                                 <td>{{ $event->slug }}</td>
                                 <td>{{ $event->start_at->format('d/m/Y g:ia') }}</td>
                                 <td>{{ $event->end_at->format('d/m/Y g:ia') }}</td>
