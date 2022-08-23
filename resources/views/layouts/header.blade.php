@@ -4,6 +4,7 @@
             <div>
                 <a href="{{ route('event.index') }}" class="navbar-brand">Event Management</a>
                 <a href="{{ route('event.index') }}" class="btn btn-primary ml-2">Homepage</a>
+                <a href="{{ route('qoute.index') }}" class="btn btn-primary ml-2">Quote</a>
             </div>
 
             @auth()
