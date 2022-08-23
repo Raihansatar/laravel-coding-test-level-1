@@ -12,7 +12,7 @@
 
         <div class="card">
             <div class="card-header">
-                Edit Event
+                Create Event
             </div>
             <form action="{{ route('event.store') }}" method="POST">
                 @csrf
@@ -21,6 +21,11 @@
                         <div class="form-group col-6">
                             <label for="" class="font-weight-bold">Name<span class="text-danger">*</span></label>
                             <input type="text" name="name" class="form-control" value="" required>
+                        </div>
+                        <div class="form-group col-6">
+                            <label for="" class="font-weight-bold">Slug</label>
+                            <input type="text" name="slug" class="form-control" value="">
+                            <span class="text-muted small">If empty, slug will be auto generated</span>
                         </div>
                     </div>
                     <div class="row">
