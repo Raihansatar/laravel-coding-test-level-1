@@ -2,10 +2,12 @@
 
 namespace App\Http\Controllers;
 
+use App\Mail\EventCreatedMail;
 use App\Models\Event;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Redis;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
@@ -114,6 +116,8 @@ class EventController extends Controller
                 'end_at' => $request->end_at
             ]);
 
+            Mail::to($request->user())->send(new EventCreatedMail($event, auth()->user()->name));
+
             Redis::set("event-$event->id", $event);
 
             $result = [
@@ -129,6 +133,7 @@ class EventController extends Controller
                     ->with('success', "Event $event->name successfully created");
 
         } catch (\Throwable $th) {
+            throw $th;
             DB::rollBack();
             $result = [
                 "message" => "Failed to create event",
