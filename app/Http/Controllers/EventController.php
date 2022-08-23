@@ -109,7 +109,7 @@ class EventController extends Controller
         }
     }
 
-    public function show($id)
+    public function show(Request $request, $id)
     {
         try {
             $event = Event::findOrFail($id);
@@ -117,19 +117,28 @@ class EventController extends Controller
                 "message" => "Event successfully retrived",
                 "data" => $event
             ];
-            return response()->json($result, 200);
+            if($request->wantsJson()){
+                return response()->json($result, 200);
+            }else{
+                return view('event.show', compact('event'));
+            }
         } catch (\Throwable $th) {
             $result = [
                 "message" => "Failed to retrive events",
                 "data" => null
             ];
-            return response()->json($result, 400);
+            if($request->wantsJson()){
+                return response()->json($result, 400);
+            }else{
+                abort(404);
+            }
         }
     }
 
     public function edit($id)
     {
-        //
+        $event = Event::findOrFail($id);
+        return view('event.edit', compact('event'));
     }
 
     public function update(Request $request, $id)
@@ -159,18 +168,31 @@ class EventController extends Controller
             ]);
 
             $result = [
-                "message" => "Event successfully updated",
+                "message" => "Event $event->name successfully updated",
                 "data" => $event
             ];
             DB::commit();
-            return response()->json($result, 200);
+
+            if($request->wantsJson()){
+                return response()->json($result, 200);
+            }else{
+                return  redirect()
+                    ->route('event.show', ['id' => $event->id])
+                    ->with('success', "Event $event->name successfully updated");
+            }
+
+
         } catch (\Throwable $th) {
             DB::rollBack();
             $result = [
-                "message" => $th,
+                "message" => "Failed $event->name to update event",
                 "data" => null
             ];
-            return response()->json($result, 400);
+            if($request->wantsJson()){
+                return response()->json($result, 400);
+            }else{
+                return back()->with('success', "Failed $event->name to update event");
+            }
         }
     }
 

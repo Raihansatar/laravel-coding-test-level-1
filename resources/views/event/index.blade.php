@@ -4,11 +4,13 @@
     <div class="container">
         @include('layouts.flash-message')
 
+        <div class="card card-body">
+            <form action="{{ route('event.index') }}" method="GET">
+            </form>
+        </div>
         <div class="card">
             <div class="card-header">
-                <div class="card-title">
-                    List of Events
-                </div>
+                List of Events
             </div>
             <div class="card-body">
                 <table class="table table-bordered table-hover">
