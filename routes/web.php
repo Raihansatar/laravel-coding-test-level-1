@@ -29,10 +29,10 @@ Route::get('/register', [RegisterController::class, 'register'])->name('register
 Route::post('/register', [RegisterController::class, 'store'])->name('register.store');
 
 
-Route::get('events/active-events', [EventController::class, 'activeEvent'])->name('event.active-event');
-Route::resource('events', EventController::class)->only(['show', 'index'])->parameter('events','id')->names('event');
-
 Route::middleware('auth:sanctum')->group(function (){
     Route::resource('events', EventController::class)->except(['show', 'index'])->parameter('events','id')->names('event');
 });
+
+Route::get('events/active-events', [EventController::class, 'activeEvent'])->name('event.active-event');
+Route::resource('events', EventController::class)->only(['show', 'index'])->parameter('events','id')->names('event');
 

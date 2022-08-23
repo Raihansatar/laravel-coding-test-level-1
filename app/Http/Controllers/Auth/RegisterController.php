@@ -20,7 +20,7 @@ class RegisterController extends Controller
     {
         $validator = Validator::make($request->all(), [
             'name' => 'required',
-            'email' => 'required',
+            'email' => 'required|email',
             'password' => 'required|confirmed|min:6',
         ]);
 
@@ -31,7 +31,7 @@ class RegisterController extends Controller
                     "error" => $validator->getMessageBag()
                 ], 400);
             }else{
-                return back()->with('error', $validator->getMessageBag());
+                return back()->withErrors($validator);
             }
         }
 
@@ -61,7 +61,6 @@ class RegisterController extends Controller
 
         } catch (\Throwable $th) {
             DB::rollBack();
-            throw $th;
             return $request->wantsJson()
                 ? response()->json(["message" => "Failed to register user."], 200)
                 : back()

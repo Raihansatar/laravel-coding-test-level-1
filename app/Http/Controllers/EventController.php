@@ -101,7 +101,7 @@ class EventController extends Controller
                     "error" => $validator->getMessageBag()
                 ], 400);
             }else{
-                return back()->with('error', $validator->getMessageBag());
+                return back()->withErrors($validator);
             }
         }
 
@@ -215,7 +215,7 @@ class EventController extends Controller
                     "error" => $validator->getMessageBag()
                 ], 400);
             }else{
-                return back()->with('error', $validator->getMessageBag());
+                return back()->withErrors($validator);
             }
         }
 

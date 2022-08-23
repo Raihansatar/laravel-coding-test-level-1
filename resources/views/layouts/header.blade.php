@@ -3,6 +3,7 @@
         <div class="container d-flex justify-content-between">
             <div>
                 <a href="{{ route('event.index') }}" class="navbar-brand">Event Management</a>
+                <a href="{{ route('event.index') }}" class="btn btn-primary ml-2">Homepage</a>
             </div>
 
             @auth()
@@ -13,6 +14,11 @@
                     </form>
                 </div>
             @endauth
+            @guest
+                <div>
+                    <a href="{{ route('login') }}" class="btn btn-primary">Login</a>
+                </div>
+            @endguest
         </div>
     </nav>
 
